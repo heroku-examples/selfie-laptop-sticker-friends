@@ -1,0 +1,34 @@
+{
+  "kafka": {
+    "url": "$KAFKA_URL",
+    "prefix": ""
+  },
+  "hapi": {
+    "routes": {
+      "cors": true
+    }  
+  },
+  "aws": {
+    "id": "$BUCKETEER_AWS_ACCESS_KEY_ID",
+    "secret": "$BUCKETEER_AWS_SECRET_ACCESS_KEY",
+    "region": "$BUCKETEER_AWS_REGION",
+    "bucket": "$BUCKETEER_BUCKET_NAME"
+  },
+  "serverAppName": "$$SERVER_APP_NAME",
+  "upload": {
+    "keyLength": 5,
+    "domain": "$$SHARE_DOMAIN"
+  },
+  "twitter": {
+    "card": {
+      "title": "Friends from the Trail",
+      "description": "Hanging out with my friends from the trail",
+      "site": "@heroku"
+    },
+    "tweet": {
+      "text": "Hanging out at the @heroku booth at Dreamforce #DF19! Stop by to make your own selfie 🤳! #dreamforce #heroku #selfie",
+      "related": "heroku,salesforce"
+    }
+  },
+  "downloadName": "df-heroku-booth-2019"
+}
