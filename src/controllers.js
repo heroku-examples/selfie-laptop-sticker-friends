@@ -11,6 +11,8 @@ const pRetry = require('p-retry')
 const { minify: minifyHtml } = require('html-tagged-literals')
 const aws = require('./aws')
 
+const FINAL_IMAGE_WIDTH = 400
+
 const generateUploadId = (length = config.upload.keyLength) => {
   // Less ambiguous character set (no o, 0, 1, l, i, etc)
   const c = 'abcdefghjkmnpqrstuvwxyz23456789'
@@ -25,11 +27,6 @@ const bufToBase64Img = (buf, type = 'png') =>
 
 const base64ImgToBuf = (base64, type = 'png') =>
   Buffer.from(base64.replace(`data:image/${type};base64,`, ''), 'base64')
-
-const svgToPng = (image) =>
-  sharp(image)
-    .png()
-    .toBuffer()
 
 const svgDimensions = async (image) => {
   const data = await svgson.parse(
@@ -51,7 +48,6 @@ const transformObject = _.curry((transform, obj) =>
 const scaleObject = _.curry((scale, obj) =>
   transformObject((v) => v * scale, obj)
 )
-const intObject = _.curry((toInt, obj) => transformObject(toInt, obj))
 
 const positionObject = (position) => (obj, bg) => {
   const bottom = bg.height - bg.height * position.bottom
@@ -60,51 +56,6 @@ const positionObject = (position) => (obj, bg) => {
   const left = right - obj.width
   return { top, left }
 }
-
-const getPngAlphaBounds = (image) =>
-  new Promise((resolve, reject) => {
-    new PNG({ filterType: 4 }).parse(image, (err, data) => {
-      if (err) return reject(err)
-
-      const getStartEnd = (arr) =>
-        arr
-          .map((rowOrCol) => rowOrCol.every((isTransparent) => isTransparent))
-          .map((isTransparent, index, list) => {
-            const prevIsTransparent = list[index - 1]
-            if (!isTransparent && prevIsTransparent === true) {
-              return index + 1
-            } else if (isTransparent && prevIsTransparent === false) {
-              return index
-            }
-            return null
-          })
-          .filter((v) => v !== null)
-
-      const rows = _.range(0, data.height).map(() => [])
-      const columns = _.range(0, data.width).map(() => [])
-
-      for (let y = 0; y < data.height; y++) {
-        for (let x = 0; x < data.width; x++) {
-          const idx = (data.width * y + x) << 2
-          const isTransparent = data.data[idx + 3] === 0
-          rows[y].push(isTransparent)
-          columns[x].push(isTransparent)
-        }
-      }
-
-      const [xStart, xEnd] = getStartEnd(columns)
-      const [yStart, yEnd] = getStartEnd(rows)
-
-      resolve({
-        left: xStart,
-        top: yStart,
-        right: xEnd,
-        bottom: yEnd,
-        width: xEnd - xStart,
-        height: yEnd - yStart
-      })
-    })
-  })
 
 exports.serverApp = {
   handler: async (req) => {
@@ -322,11 +273,11 @@ exports.submit = {
     
       const stickerImageFinal = await sharp(stickerImage)
         .resize({
-          width: Math.round(frameImageDim.width/2),
-          height: Math.round(frameImageDim.height/2),
+          width: FINAL_IMAGE_WIDTH,//Math.round(frameImageDim.width/2),
+          // height: Math.round(frameImageDim.height/2),
           fit: 'contain'
         })
-        .png()
+        .png({compressionLevel: 9, adaptiveFiltering: true, force: true })
         .toBuffer()
 
         return {
