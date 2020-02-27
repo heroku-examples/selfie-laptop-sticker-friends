@@ -1,8 +1,9 @@
 import React from 'react'
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
-import ChooseCharacter from './ChooseCharacter'
-import Character from './Character'
-import Selfie from './Selfie'
+import ChooseFrame from './ChooseFrame'
+import Frame from './Frame'
+import SelfieFrame from './SelfieFrame'
+
 import FourOhFour from './404'
 import QRCode from './QR'
 
@@ -11,13 +12,19 @@ const App = () => {
     <Router>
       <Switch>
         <Route exact path="/">
-          <ChooseCharacter />
+          <ChooseFrame />
         </Route>
-        <Route exact path="/character/:id">
+        {/* <Route exact path="/frame-preview/:id">
+          <ChooseFrame />
+        </Route> */}
+        <Route exact path="/frame/:id">
+          <SelfieFrame />
+        </Route>
+        {/* <Route exact path="/character/:id">
           <Character />
-        </Route>
+        </Route> */}
         <Route exact path="/selfie/:id">
-          <Selfie />
+          <Frame />
         </Route>
         <Route exact path="/qr">
           <QRCode />

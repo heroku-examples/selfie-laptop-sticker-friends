@@ -3,3 +3,4 @@ config/local.json
 .env
 key.pem
 cert.pem
+.DS_Store

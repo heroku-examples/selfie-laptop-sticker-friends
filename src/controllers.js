@@ -145,32 +145,6 @@ exports.health = {
   }
 }
 
-exports.character = {
-  handler: async (req) => {
-    const { character } = req.params
-    const image = await readAppImage(`${character}-face.svg`)
-
-    const svgData = await svgson.parse(image.toString())
-    const face = svgData.children[1].children[0]
-
-    let dimensions = {}
-    if (face.type === 'ellipse') {
-      const { rx, ry } = face.attributes
-      dimensions = intObject(
-        Math.ceil,
-        scaleObject(2, { height: ry, width: rx })
-      )
-    } else {
-      dimensions = await svgToPng(image).then(getPngAlphaBounds)
-    }
-
-    const res = { fill: face.attributes.fill, ...dimensions }
-    req.log(['character'], res)
-
-    return res
-  }
-}
-
 exports.savePhoto = {
   handler: async (req) => {
     const user = req.state.data || {}
@@ -263,142 +237,102 @@ exports.savePhoto = {
   }
 }
 
+
 exports.submit = {
   handler: async (req, h) => {
-    const { image, crop: cropPayload, character } = req.payload
+    const { image, frameId, frameData } = req.payload
 
     const user = req.state.data || {}
     if (!user.id) user.id = UUID.v4()
     h.state('data', user)
 
-    const crop = Object.keys(cropPayload).reduce((acc, key) => {
-      acc[key] = parseInt(cropPayload[key], 10)
-      return acc
-    }, {})
+    const scaleSvg = scaleObject(2)
 
-    // Magic numbers
-    // Scale handles how big to scale up the svgs
-    const scaleSvg = scaleObject(5)
-    // How tall the character should be on the final image
-    //TODO: this might need to differ based on the height of the character
-    const scaleCharacterToBg = scaleObject(0.5)
-    // Where to position the character on the background for the final shareable image
-    const characterPosition = positionObject({
+    let frameImageBuffer = await readAppImage(`${frameId}.svg`)
+    //First make the frame larger than the video image
+    const frameImageDim = await sharp(frameImageBuffer).metadata().then(scaleSvg)
+    frameImageBuffer = await sharp(frameImageBuffer)
+      .resize(frameImageDim.width, frameImageDim.height)
+      .png()
+      .toBuffer()
+  
+    let videoImageBuffer = base64ImgToBuf(image, 'jpeg')
+    videoImageBuffer = await sharp(videoImageBuffer)
+    .resize({
+      width: frameImageDim.width*frameData.shrink,
+      fit: 'contain',
+      position: 'top'
+    })
+    .png()
+    .toBuffer()
+    // .toFile('out.png')
+
+  const stickerImage = await sharp({
+    create: {
+      width: frameImageDim.width,
+      height: frameImageDim.height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    }
+  })
+    .png()
+    .toBuffer()
+    .then((b)=>
+      sharp(b)
+        .composite([{
+          input: videoImageBuffer,
+          //  gravity: 'north'
+          top: Math.round(frameData.top * frameImageDim.height),
+          left: Math.round(frameData.left * frameImageDim.width)
+        },{
+          input: frameImageBuffer
+        }])
+        .png()
+        .toBuffer()
+        // .toFile('out.png')
+    )
+
+    const stickerPosition = positionObject({
       bottom: 0.1,
       right: 0.1
     })
 
-    const faceDimensions = await readAppImage(`${character}-face.svg`)
-      .then(svgToPng)
-      .then(getPngAlphaBounds)
-      .then(scaleSvg)
-
-    const [body, face, hair] = await Promise.all(
-      [
-        `${character}-body.svg`,
-        `${character}-face.svg`,
-        `${character}-hair.svg`
-      ].map(async (name) => {
-        let image
-        try {
-          image = await readAppImage(name)
-        } catch (e) {
-          // Some people dont have hair and thats ok
-          if (name === `${character}-hair.svg` && e.code === 'ENOENT') {
-            return null
-          }
-          throw e
-        }
-        const dim = await svgDimensions(image).then(scaleSvg)
-        // 72 is the default density maybe? It seems to look ok
-        // If you lower this the resultant png is pixelated
-        return sharp(image, scaleSvg({ density: 72 }))
-          .resize(dim.width, dim.height)
-          .png()
-          .toBuffer()
-      })
-    )
-
-    const faceImage = await sharp(base64ImgToBuf(image, 'jpeg'))
-      .extract(_.pick(crop, 'top', 'left', 'width', 'height'))
-      .composite([
-        {
-          input: Buffer.from(`
-            <svg height="${crop.height}" width="${crop.width}">
-              <ellipse
-                cx="${crop.width / 2}"
-                cy="${crop.height / 2}"
-                rx="${crop.width / 2}"
-                ry="${crop.height / 2}"
-              />
-            </svg>
-          `),
-          blend: 'dest-in'
-        }
-      ])
-      .png()
-      .toBuffer()
-      .then((b) =>
-        sharp(b)
-          .resize({
-            withoutEnlargement: true,
-            ..._.pick(faceDimensions, 'height', 'width')
-          })
-          .png()
-          .toBuffer()
-      )
-
-    const characterImage = await sharp(body)
-      .composite(
-        await Promise.all(
-          [
-            { input: face },
-            {
-              input: faceImage,
-              top: faceDimensions.top,
-              left: faceDimensions.left
-            },
-            hair && { input: hair }
-          ].filter(Boolean)
-        )
-      )
-      .png()
-      .toBuffer()
-
     const backgroundImage = await readAppImage('submission-bg.svg')
     const backgroundDims = await svgDimensions(backgroundImage)
-    const characterResize = await sharp(characterImage)
+    const stickerImageResize = await sharp(stickerImage)
       .resize({
         withoutEnlargement: true,
-        ..._.pick(
-          intObject(Math.round, scaleCharacterToBg(backgroundDims)),
-          'height'
-        )
+        height: Math.round(backgroundDims.height/2)
       })
       .png()
       .toBuffer()
 
-    const characterDims = await sharp(characterResize).metadata()
-    const characterOnBg = await sharp(backgroundImage)
+    const stickerDims = await sharp(stickerImageResize).metadata()
+    const {top:stickerTop, left: stickerLeft} = stickerPosition(stickerDims, backgroundDims)
+    const stickerOnBg = await sharp(backgroundImage)
       .composite([
         {
-          input: characterResize,
-          ..._.pick(
-            intObject(
-              Math.round,
-              characterPosition(characterDims, backgroundDims)
-            ),
-            'top',
-            'left'
-          )
+          input: stickerImageResize,
+          top: Math.round(stickerTop),
+          left: Math.round(stickerLeft)
         }
       ])
       .toFormat('jpeg')
       .toBuffer()
+    
+      const stickerImageFinal = await sharp(stickerImage)
+        .resize({
+          width: Math.round(frameImageDim.width/2),
+          height: Math.round(frameImageDim.height/2),
+          fit: 'contain'
+        })
+        .png()
+        .toBuffer()
 
-    return {
-      character: bufToBase64Img(characterImage),
-      background: bufToBase64Img(characterOnBg, 'jpeg')
-    }
+        return {
+          sticker: bufToBase64Img(stickerImageFinal),
+          background: bufToBase64Img(stickerOnBg, 'jpeg')
+        }
+
   }
 }

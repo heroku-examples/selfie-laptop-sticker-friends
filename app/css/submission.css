@@ -127,9 +127,9 @@ body {
 }
 
 .selfie-frame > img {
-  position: absolute;
+  /* position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%); */
 }
 
 .selfie-frame .face {
@@ -208,9 +208,10 @@ body {
 }
 
 .full .landian img {
-  height: 100%;
+  width: 80vw;
+  max-width: 500px;
   position: absolute;
-  top: 0;
+  top: 50px;
   left: 50%;
   transform: translateX(-50%);
 }

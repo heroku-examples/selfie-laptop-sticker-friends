@@ -3,11 +3,6 @@ const controllers = require('./controllers')
 module.exports = [
   {
     method: 'GET',
-    path: '/api/character/{character}',
-    config: controllers.character
-  },
-  {
-    method: 'GET',
     path: '/health',
     config: controllers.health
   },
