@@ -6,8 +6,9 @@ const Character = () => {
   const url = new URL(window.location)
   url.pathname = '/'
   const entryUrl = url.toString()
-  //const [herokuAppName] = url.hostname.split('.')
-  const herokuAppName = 'http://localhost:8090'
+  console.log(url.hostname.split('.')[0])
+  const herokuAppName = entryUrl.match(/localhost/)? entryUrl : url.hostname.split('.')[0]
+
   useEffect(() => {
     api('/server-app', {
       method: 'POST',
