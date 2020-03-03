@@ -32,9 +32,10 @@ const svgDimensions = async (image) => {
   const data = await svgson.parse(
     Buffer.isBuffer(image) ? image.toString() : image
   )
+  console.log(data)
   return {
-    height: +data.attributes.height,
-    width: +data.attributes.width
+    height: parseInt(data.attributes.height),
+    width: parseInt(data.attributes.width)
   }
 }
 
@@ -198,7 +199,7 @@ exports.submit = {
     h.state('data', user)
 
     const scaleSvg = scaleObject(2)
-
+console.log(1)
     let frameImageBuffer = await readAppImage(`${frameId}.svg`)
     //First make the frame larger than the video image
     const frameImageDim = await sharp(frameImageBuffer).metadata().then(scaleSvg)
@@ -206,7 +207,8 @@ exports.submit = {
       .resize(frameImageDim.width, frameImageDim.height)
       .png()
       .toBuffer()
-  
+      console.log(2)
+
     let videoImageBuffer = base64ImgToBuf(image, 'jpeg')
     videoImageBuffer = await sharp(videoImageBuffer)
     .resize({
@@ -217,6 +219,7 @@ exports.submit = {
     .png()
     .toBuffer()
     // .toFile('out.png')
+    console.log(3)
 
   const stickerImage = await sharp({
     create: {
@@ -242,6 +245,7 @@ exports.submit = {
         .toBuffer()
         // .toFile('out.png')
     )
+    console.log(4)
 
     const stickerPosition = positionObject({
       bottom: 0.1,
@@ -250,6 +254,7 @@ exports.submit = {
 
     const backgroundImage = await readAppImage('submission-bg.svg')
     const backgroundDims = await svgDimensions(backgroundImage)
+    console.log(backgroundDims)
     const stickerImageResize = await sharp(stickerImage)
       .resize({
         withoutEnlargement: true,
@@ -257,6 +262,7 @@ exports.submit = {
       })
       .png()
       .toBuffer()
+      console.log(5)
 
     const stickerDims = await sharp(stickerImageResize).metadata()
     const {top:stickerTop, left: stickerLeft} = stickerPosition(stickerDims, backgroundDims)
