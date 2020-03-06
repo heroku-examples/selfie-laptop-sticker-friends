@@ -50,14 +50,6 @@ const scaleObject = _.curry((scale, obj) =>
   transformObject((v) => v * scale, obj)
 )
 
-const positionObject = (position) => (obj, bg) => {
-  const bottom = bg.height - bg.height * position.bottom
-  const top = bottom - obj.height
-  const right = bg.width - bg.width * position.right
-  const left = right - obj.width
-  return { top, left }
-}
-
 exports.serverApp = {
   handler: async (req) => {
     // Allow for the serverAppName config value to be a full url for easier
@@ -199,7 +191,7 @@ exports.submit = {
     h.state('data', user)
 
     const scaleSvg = scaleObject(2)
-console.log(1)
+
     let frameImageBuffer = await readAppImage(`${frameId}.svg`)
     //First make the frame larger than the video image
     const frameImageDim = await sharp(frameImageBuffer).metadata().then(scaleSvg)
@@ -207,7 +199,6 @@ console.log(1)
       .resize(frameImageDim.width, frameImageDim.height)
       .png()
       .toBuffer()
-      console.log(2)
 
     let videoImageBuffer = base64ImgToBuf(image, 'jpeg')
     videoImageBuffer = await sharp(videoImageBuffer)
@@ -218,8 +209,6 @@ console.log(1)
     })
     .png()
     .toBuffer()
-    // .toFile('out.png')
-    console.log(3)
 
   const stickerImage = await sharp({
     create: {
@@ -243,14 +232,7 @@ console.log(1)
         }])
         .png()
         .toBuffer()
-        // .toFile('out.png')
     )
-    console.log(4)
-
-    const stickerPosition = positionObject({
-      bottom: 0.1,
-      right: 0.1
-    })
 
     const backgroundImage = await readAppImage('submission-bg.svg')
     const backgroundDims = await svgDimensions(backgroundImage)
@@ -258,20 +240,15 @@ console.log(1)
     const stickerImageResize = await sharp(stickerImage)
       .resize({
         withoutEnlargement: true,
-        height: Math.round(backgroundDims.height/2)
+        height: Math.round(backgroundDims.height/1.5)
       })
       .png()
       .toBuffer()
-      console.log(5)
 
-    const stickerDims = await sharp(stickerImageResize).metadata()
-    const {top:stickerTop, left: stickerLeft} = stickerPosition(stickerDims, backgroundDims)
     const stickerOnBg = await sharp(backgroundImage)
       .composite([
         {
-          input: stickerImageResize,
-          top: Math.round(stickerTop),
-          left: Math.round(stickerLeft)
+          input: stickerImageResize
         }
       ])
       .toFormat('jpeg')
@@ -279,8 +256,7 @@ console.log(1)
     
       const stickerImageFinal = await sharp(stickerImage)
         .resize({
-          width: FINAL_IMAGE_WIDTH,//Math.round(frameImageDim.width/2),
-          // height: Math.round(frameImageDim.height/2),
+          width: FINAL_IMAGE_WIDTH,
           fit: 'contain'
         })
         .png({compressionLevel: 9, adaptiveFiltering: true, force: true })

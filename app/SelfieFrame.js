@@ -276,7 +276,7 @@ const App = () => {
               <div>
                 <a
                   className="text"
-                  href={`${share.html}`}
+                  href={`${share.image}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
