@@ -37,12 +37,10 @@ body {
   position: relative;
   background-color: #1679b7;
   background-repeat: no-repeat;
-  background-image: linear-gradient(
-    to bottom,
-    #001432 0,
-    #0b4472 300px,
-    #1679b7 800px
-  );
+  background: linear-gradient(130deg, 
+            #42AECC 0%,
+            #8A96E9 50%,
+            #9D70D0 100%);
   font-family: 'salesforce-sans', 'Helvetica Neue', sans-serif;
   font-size: 14px;
   font-weight: 400;
@@ -124,12 +122,6 @@ body {
 .selfie-frame video {
   position: absolute;
   left: 50%;
-}
-
-.selfie-frame > img {
-  /* position: absolute;
-  left: 50%;
-  transform: translateX(-50%); */
 }
 
 .selfie-frame .face {

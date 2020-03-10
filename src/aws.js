@@ -43,7 +43,7 @@ exports.upload = async (filePath, body) => {
     s3Path,
     `http://${config.aws.bucket}.s3.amazonaws.com`
   ).toString()
-    console.log(getContentType(path.extname(filePath).slice(1)), "AAAAAAA")
+
   const resp = await s3
     .putObject({
       Key: s3Path,
