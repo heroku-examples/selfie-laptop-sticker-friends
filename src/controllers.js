@@ -19,8 +19,8 @@ const generateUploadId = (length = config.upload.keyLength) => {
   return _.times(length, () => c.charAt(_.random(c.length - 1))).join('')
 }
 
-const readAppImage = (image) =>
-  fs.readFile(path.resolve(__dirname, '..', 'app', 'images', image))
+const readAppImage = (image, folder = '') =>
+  fs.readFile(path.resolve(__dirname, '..', 'app', 'images', folder, image))
 
 const bufToBase64Img = (buf, type = 'png') =>
   `data:image/${type};base64,${buf.toString('base64')}`
@@ -192,7 +192,7 @@ exports.submit = {
 
     const scaleSvg = scaleObject(2)
 
-    let frameImageBuffer = await readAppImage(`${frameId}.svg`)
+    let frameImageBuffer = await readAppImage(`${frameId}.svg`, 'frames')
     //First make the frame larger than the video image
     const frameImageDim = await sharp(frameImageBuffer).metadata().then(scaleSvg)
     frameImageBuffer = await sharp(frameImageBuffer)
