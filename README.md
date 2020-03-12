@@ -1,4 +1,4 @@
-# Selfies from the Trail Demo app
+# Selfies from the laptop stickers Demo app
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/heroku-examples/selfies-from-the-trail-demo)
 
@@ -26,17 +26,6 @@ npm run nodemon
 ## Production
 
 When starting the app in production mode, the file `src/dotenv.js` will run one synchronous request to get all the config vars from `process.env.SERVER_APP_NAME` (using `process.env.HEROKU_TOKEN` as the token) and write them all to `process.env`.
-
-## Deploying
-
-In order to speed up deploys, the client files are built locally by running `npm run build` and then committed to the repo. Subsequent deploys will use these committed files. This also speeds up the deploy process by allowing only the server dependencies to be specified in `dependencies` in `package.json`.
-
-```sh
-npm run build
-git add dist
-git commit -m "Build dist"
-git push
-```
 
 ## Share Domain
 
